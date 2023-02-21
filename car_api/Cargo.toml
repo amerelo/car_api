@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 # back
 axum = { version = "0.6" }
-axum-extra = { version = "0.5.0", features = ["query"] }
-tokio = { version = "1.0", features = ["full"] }
+axum-extra = { version = "0.5", features = ["query"] }
+tokio = { version = "1.25", features = ["full"] }
 
 #DB
 sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls" , "postgres", "time", "uuid"] }
@@ -15,10 +15,12 @@ sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls" , "postgre
 # Important secondary crates
 serde = { version = "1.0", features = ["derive"] }
 time = "0.3" # chrono ?
-uuid = { version = "1.1.2", features = ["serde"] }
+uuid = { version = "1.3", features = ["serde"] }
+openssl = { version = "0.10" }
+# base64 = {}
 
-serde_with = { version = "2.0.0", features = ["time_0_3"] }
-validator = { version = "0.16.0", features = ["derive"] }
+serde_with = { version = "2.2", features = ["time_0_3"] }
+validator = { version = "0.16", features = ["derive"] }
 
 #logging
 tracing = "0.1"

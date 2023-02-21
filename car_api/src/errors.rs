@@ -2,6 +2,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 
+use openssl::envelope::Open;
 use serde_with::DisplayFromStr;
 use validator::ValidationErrors;
 
@@ -10,6 +11,9 @@ use validator::ValidationErrors;
 pub enum Error {
     #[error("an internal database error occurred")]
     Sqlx(#[from] sqlx::Error),
+
+    #[error("OpenSSL error occurred")]
+    Openssl(#[from] openssl::error::ErrorStack),
 
     #[error("validation error in request body")]
     InvalidEntity(#[from] ValidationErrors),
@@ -57,6 +61,7 @@ impl Error {
         use Error::*;
 
         match self {
+            Openssl(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
             InvalidEntity(_) | UnprocessableEntity(_) => StatusCode::UNPROCESSABLE_ENTITY,
             Conflict(_) => StatusCode::CONFLICT,

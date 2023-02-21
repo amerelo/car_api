@@ -1,6 +1,7 @@
 mod database;
 mod server;
 
+mod encrypt;
 mod errors;
 mod routes;
 

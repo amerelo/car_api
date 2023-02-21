@@ -16,10 +16,9 @@ use crate::routes::{health_check::*, user::*, AppState};
 
 pub async fn run() -> std::io::Result<()> {
     let port = match env::var("PORT") {
-        Ok(p) => p.parse::<u16>(),
-        _ => Ok(8080),
-    }
-    .unwrap();
+        Ok(p) => p.parse::<u16>().unwrap(),
+        _ => 8080,
+    };
 
     // initialize tracing
     tracing_subscriber::fmt::init();
