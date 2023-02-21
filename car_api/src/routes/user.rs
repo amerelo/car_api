@@ -41,12 +41,12 @@ impl AuthenticableUser {
 #[derive(Serialize, Debug, sqlx::FromRow)]
 pub struct UserInfo {
     pub user_id: Uuid,
-    pub username: String,
     pub email: String,
     pub password_hash: String,
     #[serde_as(as = "Rfc3339")]
     pub created_at: OffsetDateTime,
-    // pub updated_at: PrimitiveDateTime,
+    // #[serde_as(as = "Rfc3339")]
+    // pub updated_at: OffsetDateTime,
 }
 
 pub async fn authenticate(
@@ -66,7 +66,6 @@ pub async fn authenticate(
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct CreateUser {
-    pub username: String,
     pub email: String,
     pub password: String,
 }
@@ -77,8 +76,7 @@ pub async fn create_user(
 ) -> Result<StatusCode> {
     // encrypt password
 
-    sqlx::query("INSERT INTO users(username, email, password_hash) VALUES ($1, $2, $3)")
-        .bind(&user.username)
+    sqlx::query("INSERT INTO users(email, password_hash) VALUES ($1, $2)")
         .bind(&user.email)
         .bind(&user.password)
         .execute(&state.pg_pool)
@@ -97,7 +95,6 @@ pub async fn create_user(
 #[derive(Deserialize)]
 pub struct UpdateUser {
     pub user_id: Uuid,
-    pub username: Option<String>,
     pub password_hash: Option<String>,
     pub email: Option<String>,
 }
@@ -109,14 +106,14 @@ pub async fn update_user(
     let response = sqlx::query(
         r#"
         UPDATE users
-        SET (username, password_hash, email) = 
-            (COALESCE($1, users.username), 
-            COALESCE($2, users.password_hash), 
-            COALESCE($3, users.email)) 
-        WHERE user_id=$4
+        SET (password_hash, email) = 
+            (
+                COALESCE($1, users.password_hash), 
+                COALESCE($2, users.email)
+            )
+        WHERE user_id=$3
         "#,
     )
-    .bind(&user.username)
     .bind(&user.password_hash)
     .bind(&user.email)
     .bind(&user.user_id)
@@ -195,6 +192,8 @@ pub async fn get_user_by_email(
 
     match user {
         Ok(user) => Ok((StatusCode::OK, Json(user))),
+        // TODO: find a way to return emty response in axum
+        // Err(_) if true => Ok((StatusCode::OK, Json(serde_json::json!({})))),
         Err(err) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("An error happened {:?}", err),

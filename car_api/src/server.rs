@@ -1,5 +1,3 @@
-use crate::{database::get_pg_pool, routes};
-
 use axum::{
     http::{StatusCode, Uri},
     response::IntoResponse,
@@ -10,12 +8,13 @@ use axum::{
 use tracing::{debug, error, info};
 
 use std::env;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::Arc;
 
-use crate::routes::{user::*, AppState};
+use crate::database::get_pg_pool;
+use crate::routes::{health_check::*, user::*, AppState};
 
-pub async fn run() {
+pub async fn run() -> std::io::Result<()> {
     let port = match env::var("PORT") {
         Ok(p) => p.parse::<u16>(),
         _ => Ok(8080),
@@ -32,6 +31,7 @@ pub async fn run() {
     // build our application with a route
     let app = Router::new()
         // .route("/", get(root))
+        .route("/health_check", get(health_check))
         .route(
             "/api/user",
             post(create_user)
@@ -45,13 +45,17 @@ pub async fn run() {
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
     let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port);
-
     debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
+    let listener = TcpListener::bind(&addr).unwrap();
+
+    axum::Server::from_tcp(listener)
+        .unwrap()
         .serve(app.into_make_service())
         .with_graceful_shutdown(signal_shutdown())
         .await
         .unwrap();
+
+    Ok(())
 }
 
 async fn signal_shutdown() {
