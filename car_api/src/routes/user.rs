@@ -75,6 +75,8 @@ pub async fn create_user(
     State(state): State<Arc<AppState>>,
     Json(user): Json<CreateUser>,
 ) -> Result<StatusCode> {
+    // encrypt password
+
     sqlx::query("INSERT INTO users(username, email, password_hash) VALUES ($1, $2, $3)")
         .bind(&user.username)
         .bind(&user.email)

@@ -1,4 +1,3 @@
-pub mod note;
 pub mod user;
 
 use sqlx::postgres::PgPool;
