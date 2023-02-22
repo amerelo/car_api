@@ -1,3 +1,4 @@
+pub mod account;
 pub mod authenticate;
 pub mod health_check;
 pub mod user;

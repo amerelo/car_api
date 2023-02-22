@@ -18,9 +18,6 @@ pub enum Error {
     InvalidEntity(#[from] ValidationErrors),
 
     #[error("{0}")]
-    UnprocessableEntity(String),
-
-    #[error("{0}")]
     Conflict(String),
 }
 
@@ -62,7 +59,7 @@ impl Error {
         match self {
             Openssl(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            InvalidEntity(_) | UnprocessableEntity(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            InvalidEntity(_) => StatusCode::UNPROCESSABLE_ENTITY,
             Conflict(_) => StatusCode::CONFLICT,
         }
     }

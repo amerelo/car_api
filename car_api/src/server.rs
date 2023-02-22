@@ -9,19 +9,16 @@ use axum::{
     http::{StatusCode, Uri},
     response::IntoResponse,
     routing::{get, post, put},
-    Extension, Router,
+    Router,
 };
 
 use tracing::{debug, error};
 
 use axum_login::{
     axum_sessions::{async_session::MemoryStore as SessionMemoryStore, SessionLayer},
-    memory_store::MemoryStore as AuthMemoryStore,
-    secrecy::SecretVec,
-    AuthLayer, AuthUser, RequireAuthorizationLayer,
+    AuthLayer, RequireAuthorizationLayer,
 };
 use rand::Rng;
-use tokio::sync::RwLock;
 
 pub async fn run() -> std::io::Result<()> {
     let port = match env::var("PORT") {

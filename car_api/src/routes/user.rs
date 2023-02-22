@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::types::{time::OffsetDateTime, uuid::Uuid};
 use time::format_description::well_known::Rfc3339;
 
+use sqlx::PgPool;
+
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 
 // use validator::Validate;
@@ -32,8 +34,31 @@ pub struct UserInfo {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct CreateUser {
+    pub user_name: String,
     pub email: String,
     pub password: String,
+}
+
+#[derive(Serialize, Debug, sqlx::FromRow)]
+pub struct UserId {
+    pub id: Uuid,
+}
+
+pub async fn create_user_db(pg_pool: &PgPool, user: &CreateUser) -> Result<Uuid> {
+    let user = sqlx::query_as::<_, UserInfo>(
+        r#"
+        INSERT INTO users(user_name, email, password_hash) 
+        VALUES ($1, $2, $3)
+        RETURNING id
+    "#,
+    )
+    .bind(&user.user_name)
+    .bind(&user.email)
+    .bind(&user.password)
+    .fetch_one(pg_pool)
+    .await?;
+
+    Ok(user.id)
 }
 
 pub async fn create_user(
@@ -42,18 +67,7 @@ pub async fn create_user(
 ) -> Result<StatusCode> {
     // encrypt password
 
-    sqlx::query("INSERT INTO users(email, password_hash) VALUES ($1, $2)")
-        .bind(&user.email)
-        .bind(&user.password)
-        .execute(&state.pg_pool)
-        .await
-        .map_err(|e| match e {
-            // if dbe.constraint() == Some("users_email_key")
-            sqlx::Error::Database(_dbe) => {
-                Error::Conflict("error: create user invalid data".into())
-            }
-            _ => e.into(),
-        })?;
+    let _ = create_user_db(&state.pg_pool, &user);
 
     Ok(StatusCode::CREATED)
 }

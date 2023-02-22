@@ -3,12 +3,7 @@ use super::AppState;
 use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Extension, Json};
-use axum_login::{
-    axum_sessions::{async_session::MemoryStore as SessionMemoryStore, SessionLayer},
-    memory_store::MemoryStore as AuthMemoryStore,
-    secrecy::SecretVec,
-    AuthLayer, AuthUser, RequireAuthorizationLayer,
-};
+use axum_login::{secrecy::SecretVec, AuthUser};
 use serde::{Deserialize, Serialize};
 use sqlx::types::uuid::Uuid;
 
@@ -36,22 +31,6 @@ impl AuthUser for User {
         SecretVec::new(self.password_hash.clone().into())
     }
 }
-
-// impl LoginUser {
-//     pub async fn authenticate(&self, pool: &PgPool) -> Option<User> {
-//         let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE email=$1")
-//             .bind(&self.email)
-//             .fetch_optional(pool)
-//             .await
-//             .unwrap()?;
-
-//         Some(user)
-//         // match argon2::verify_encoded(&user.password, self.password.as_bytes()).unwrap() {
-//         //     true => Some(user),
-//         //     false => None,
-//         // }
-//     }
-// }
 
 pub async fn login_handler(
     mut auth: AuthContext,

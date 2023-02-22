@@ -3,8 +3,9 @@
 CREATE TABLE users (
 	id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	email VARCHAR UNIQUE NOT NULL,
+	user_name VARCHAR NOT NULL,
 	password_hash VARCHAR NOT NULL,
-	created_at timestamptz NOT NULL DEFAULT now(),
+	created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
 	updated_at TIMESTAMP  NOT NULL DEFAULT current_timestamp
 );
 
@@ -15,7 +16,7 @@ CREATE TABLE car (
 	user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 	plate VARCHAR NOT NULL,
 	model VARCHAR NOT NULL,
-	created_at timestamptz NOT NULL DEFAULT now(),
+	created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
 	updated_at TIMESTAMP  NOT NULL DEFAULT current_timestamp
 );
 
@@ -24,8 +25,8 @@ CREATE TABLE bank_details (
 	user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 	country VARCHAR NOT NULL,
 	iban VARCHAR NOT NULL,
-	acount_name VARCHAR NOT NULL,
-	created_at timestamptz NOT NULL DEFAULT now(),
+	account_holder VARCHAR NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
 	updated_at TIMESTAMP  NOT NULL DEFAULT current_timestamp
 );
 
