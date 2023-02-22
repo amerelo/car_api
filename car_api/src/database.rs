@@ -14,5 +14,5 @@ pub async fn get_pg_pool() -> PgPool {
         .max_connections(15)
         .connect_with(connect_options)
         .await
-        .unwrap()
+        .expect("failed connection to database ")
 }

@@ -2,7 +2,6 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 
-use openssl::envelope::Open;
 use serde_with::DisplayFromStr;
 use validator::ValidationErrors;
 

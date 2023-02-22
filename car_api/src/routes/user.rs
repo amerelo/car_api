@@ -1,67 +1,33 @@
 use super::AppState;
+use crate::errors::Error;
 
-use axum::extract::{Query, State};
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 
 use sqlx::types::{time::OffsetDateTime, uuid::Uuid};
 use time::format_description::well_known::Rfc3339;
 
-use crate::errors::Error;
-use sqlx::postgres::PgPool;
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 
 // use validator::Validate;
 
 use std::sync::Arc;
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
-pub struct AuthenticableUser {
-    pub email: String,
-    pub password: String,
-}
-
-impl AuthenticableUser {
-    pub async fn authenticate(&self, pool: &PgPool) -> Option<UserInfo> {
-        let user = sqlx::query_as::<_, UserInfo>("SELECT * FROM users WHERE email=$1")
-            .bind(&self.email)
-            .fetch_optional(pool)
-            .await
-            .unwrap()?;
-
-        Some(user)
-        // match argon2::verify_encoded(&user.password, self.password.as_bytes()).unwrap() {
-        //     true => Some(user),
-        //     false => None,
-        // }
-    }
-}
-
 #[serde_with::serde_as]
 #[derive(Serialize, Debug, sqlx::FromRow)]
 pub struct UserInfo {
-    pub user_id: Uuid,
+    pub id: Uuid,
     pub email: String,
     pub password_hash: String,
     #[serde_as(as = "Rfc3339")]
     pub created_at: OffsetDateTime,
     // #[serde_as(as = "Rfc3339")]
     // pub updated_at: OffsetDateTime,
-}
-
-pub async fn authenticate(
-    // cookie_jar: CookieJar,
-    State(state): State<Arc<AppState>>,
-    Json(user): Json<AuthenticableUser>,
-) -> impl IntoResponse {
-    match user.authenticate(&state.pg_pool).await {
-        Some(_) => {}
-        None => {
-            return Err((StatusCode::NOT_FOUND, "We couldn't connect you, please ensure that the login and password are correct before trying again"));
-        }
-    };
-
-    Ok(StatusCode::OK)
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -94,7 +60,7 @@ pub async fn create_user(
 
 #[derive(Deserialize)]
 pub struct UpdateUser {
-    pub user_id: Uuid,
+    pub id: Uuid,
     pub password_hash: Option<String>,
     pub email: Option<String>,
 }
@@ -108,15 +74,15 @@ pub async fn update_user(
         UPDATE users
         SET (password_hash, email) = 
             (
-                COALESCE($1, users.password_hash), 
+                COALESCE($1, users.password_hash),
                 COALESCE($2, users.email)
             )
-        WHERE user_id=$3
+        WHERE id=$3
         "#,
     )
     .bind(&user.password_hash)
     .bind(&user.email)
-    .bind(&user.user_id)
+    .bind(&user.id)
     .execute(&state.pg_pool)
     .await;
 
@@ -132,38 +98,14 @@ pub async fn update_user(
     }
 }
 
-#[derive(Deserialize)]
-pub struct SelectedUserById {
-    pub user_id: Uuid,
-}
-
-pub async fn delete_user(
-    State(state): State<Arc<AppState>>,
-    Json(user): Json<SelectedUserById>,
-) -> impl IntoResponse {
-    let response = sqlx::query("DELETE FROM users WHERE user_id=$1")
-        .bind(user.user_id)
-        .execute(&state.pg_pool)
-        .await;
-
-    match response {
-        Ok(val) => Ok((
-            StatusCode::OK,
-            format!("user deleted with success {:?}", val),
-        )),
-        Err(err) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("An error happened {:?}", err),
-        )),
-    }
-}
+// getDetails
 
 pub async fn get_user_by_id(
     State(state): State<Arc<AppState>>,
     user: Query<SelectedUserById>,
 ) -> impl IntoResponse {
-    let user = sqlx::query_as::<_, UserInfo>("SELECT * FROM users WHERE user_id=$1")
-        .bind(user.user_id)
+    let user = sqlx::query_as::<_, UserInfo>("SELECT * FROM users WHERE id=$1")
+        .bind(user.id)
         .fetch_one(&state.pg_pool)
         .await;
 
@@ -194,6 +136,32 @@ pub async fn get_user_by_email(
         Ok(user) => Ok((StatusCode::OK, Json(user))),
         // TODO: find a way to return emty response in axum
         // Err(_) if true => Ok((StatusCode::OK, Json(serde_json::json!({})))),
+        Err(err) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("An error happened {:?}", err),
+        )),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct SelectedUserById {
+    pub id: Uuid,
+}
+
+pub async fn delete_user(
+    State(state): State<Arc<AppState>>,
+    Json(user): Json<SelectedUserById>,
+) -> impl IntoResponse {
+    let response = sqlx::query("DELETE FROM users WHERE id=$1")
+        .bind(user.id)
+        .execute(&state.pg_pool)
+        .await;
+
+    match response {
+        Ok(val) => Ok((
+            StatusCode::OK,
+            format!("user deleted with success {:?}", val),
+        )),
         Err(err) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("An error happened {:?}", err),

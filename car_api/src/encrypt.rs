@@ -1,4 +1,19 @@
 /**
+ *  password-based encryption, then you should use a key derivation function, such as PBKDF2. A key derivation function
+ *  takes a salt and a supplied user password, and produces a key that can be used with a cipher like AES.
+ *
+ *  To encrypt, you would prompt for a password, generate a random salt, and derive a key using the KDF.
+ *  You would then use that key with AES in a suitable block cipher mode to encrypt the data, and store only the salt and the encrypted
+ *  data (and whatever IV the cipher mode requires).
+ *
+ *  To decrypt, you would prompt for a password, load the salt from the file, and re-derive the key. You would then use that key
+ *  to decrypt the file.
+ *
+ *  The purpose of the salt is to prevent precomputation optimisations from being applied to a dictionary attack.
+ *  It is indeed possible to perform a bruteforce dictionary attack once the salt is known,
+ *  but the KDF is designed to be slow enough to make this infeasible without precomputation.
+ *
+ *
  * Encryption and decryption utils for securely storing sensitive data.
  *
  * Encrypt: Data is JSON-stringified before encryption, and is returned as an encrypted string.
@@ -90,15 +105,16 @@ fn decrypt(text: String) -> Result<String, Error> {
     Ok(String::from_utf8_lossy(&value).to_string())
 }
 
-// pub fn decrypt_data(value: String) -> Result<serde_json::Value, Error> {
-//     match env::var("ENCRYPTION_SECRET") {
-//         Ok(..) => {
-//             let value: serde_json::Value = serde_json::from_str(&decrypt(value)?)?;
-//             Ok(value)
-//         }
-//         _ => {
-//             let value: serde_json::Value = serde_json::from_str(&value)?;
-//             Ok(value)
-//         }
-//     }
-// }
+pub fn decrypt_data(value: String) -> Result<String, Error> {
+    match env::var("ENCRYPTION_SECRET") {
+        Ok(..) => {
+            let value = decrypt(value)?;
+            Ok(value)
+        }
+        _ => {
+            // send error if ENCRYPTION_SECRET is not set
+            let value = value;
+            Ok(value)
+        }
+    }
+}

@@ -1,44 +1,66 @@
-use axum::{
-    http::{StatusCode, Uri},
-    response::IntoResponse,
-    routing::{get, post},
-    Router,
-};
-
-use tracing::{debug, error, info};
+use crate::database::get_pg_pool;
+use crate::routes::{authenticate::*, health_check::*, user::*, AppState};
 
 use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::Arc;
 
-use crate::database::get_pg_pool;
-use crate::routes::{health_check::*, user::*, AppState};
+use axum::{
+    http::{StatusCode, Uri},
+    response::IntoResponse,
+    routing::{get, post, put},
+    Extension, Router,
+};
+
+use tracing::{debug, error};
+
+use axum_login::{
+    axum_sessions::{async_session::MemoryStore as SessionMemoryStore, SessionLayer},
+    memory_store::MemoryStore as AuthMemoryStore,
+    secrecy::SecretVec,
+    AuthLayer, AuthUser, RequireAuthorizationLayer,
+};
+use rand::Rng;
+use tokio::sync::RwLock;
 
 pub async fn run() -> std::io::Result<()> {
     let port = match env::var("PORT") {
         Ok(p) => p.parse::<u16>().unwrap(),
         _ => 8080,
     };
-
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    let shared_state = Arc::new(AppState {
-        pg_pool: get_pg_pool().await,
-    });
+    let pg_pool = get_pg_pool().await;
 
-    // build our application with a route
+    let secret = rand::thread_rng().gen::<[u8; 64]>();
+
+    let session_store = SessionMemoryStore::new();
+    let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
+
+    let user_store = axum_login::PostgresStore::<User>::new(pg_pool.clone())
+        .with_query("SELECT * FROM users WHERE id::text = $1");
+    let auth_layer = AuthLayer::new(user_store, &secret);
+
+    let shared_state = Arc::new(AppState { pg_pool });
+
     let app = Router::new()
-        // .route("/", get(root))
-        .route("/health_check", get(health_check))
+        // example
+        .route("/protected", get(protected_handler))
+        // get details
+        .route("/api/get_details", get(protected_handler))
         .route(
             "/api/user",
-            post(create_user)
-                .put(update_user)
-                .get(get_user_by_email)
-                .delete(delete_user),
+            put(update_user).get(get_user_by_email).delete(delete_user),
         )
-        .route("/api/authenticate", post(authenticate))
+        .route_layer(RequireAuthorizationLayer::<User>::login())
+        .route("/health_check", get(health_check))
+        .route("/api/login", post(login_handler))
+        .route("/api/logout", get(logout_handler))
+        .route("/api/user", post(create_user))
+        //
+        .layer(auth_layer)
+        .layer(session_layer)
         .with_state(shared_state);
 
     // run our app with hyper

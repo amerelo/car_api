@@ -9,8 +9,13 @@ axum = { version = "0.6" }
 axum-extra = { version = "0.5", features = ["query"] }
 tokio = { version = "1.25", features = ["full"] }
 
+#login
+## use lateset commit in main in orther to use axum login with postgers as a store
+axum-login = { git = "https://github.com/maxcountryman/axum-login", rev = "4efb8aa", features = ["postgres"] }
+rand = { version = "0.8", features = ["min_const_gen"] }
+
 #DB
-sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls" , "postgres", "time", "uuid"] }
+sqlx = { version = "0.6", features = [ "runtime-tokio-rustls" , "postgres", "time", "uuid"] }
 
 # Important secondary crates
 serde = { version = "1.0", features = ["derive"] }
