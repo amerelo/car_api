@@ -7,9 +7,8 @@ use crate::errors::Error;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Extension, Json};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
-
 use sqlx::types::uuid::Uuid;
+use sqlx::PgPool;
 
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 

@@ -2,7 +2,7 @@ use super::AppState;
 
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_login::{secrecy::SecretVec, AuthUser};
 use serde::{Deserialize, Serialize};
 use sqlx::types::uuid::Uuid;
@@ -55,8 +55,4 @@ pub async fn login_handler(
 
 pub async fn logout_handler(mut auth: AuthContext) {
     auth.logout().await;
-}
-
-pub async fn protected_handler(Extension(user): Extension<User>) -> impl IntoResponse {
-    format!("Logged in as: {}", user.email)
 }

@@ -1,0 +1,23 @@
+{
+  "query": "\n        INSERT INTO users(user_name, email, password_hash)\n        VALUES ($1, $2, $3)\n        RETURNING id\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "77190e5d12fbbcc46c2e925ff0f5d73b49ba1743fb9bcdd3997875d530facbe3"
+}

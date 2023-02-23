@@ -1,18 +1,18 @@
-use crate::database::get_pg_pool;
-use crate::routes::{account::*, authenticate::*, health_check::*, user::*, AppState};
+use crate::routes::{account::*, authenticate::*, health_check::*, AppState};
 
-use std::env;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
+use std::net::TcpListener;
 use std::sync::Arc;
 
 use axum::{
     http::{StatusCode, Uri},
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{get, post},
     Router,
 };
 
-use tracing::{debug, error};
+use sqlx::PgPool;
+
+use tracing::error;
 
 use axum_login::{
     axum_sessions::{async_session::MemoryStore as SessionMemoryStore, SessionLayer},
@@ -20,18 +20,10 @@ use axum_login::{
 };
 use rand::Rng;
 
-pub async fn run() -> std::io::Result<()> {
-    let port = match env::var("PORT") {
-        Ok(p) => p.parse::<u16>().unwrap(),
-        _ => 8080,
-    };
-    // initialize tracing
-    tracing_subscriber::fmt::init();
+// pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
 
-    let pg_pool = get_pg_pool().await;
-
+pub async fn run(listener: TcpListener, pg_pool: PgPool) -> std::io::Result<()> {
     let secret = rand::thread_rng().gen::<[u8; 64]>();
-
     let session_store = SessionMemoryStore::new();
     let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
 
@@ -42,30 +34,26 @@ pub async fn run() -> std::io::Result<()> {
     let shared_state = Arc::new(AppState { pg_pool });
 
     let app = Router::new()
-        // example
-        .route("/protected", get(protected_handler))
         //
         .route("/api/account", get(get_account_details))
-        .route(
-            "/api/user",
-            put(update_user).get(get_user_by_email).delete(delete_user),
-        )
+        // .route(
+        //     "/api/user",
+        //     put(update_user).get(get_user_by_email).delete(delete_user),
+        // )
         .route_layer(RequireAuthorizationLayer::<User>::login())
+        //
         .route("/api/account", post(create_account))
-        // .route("/api/user", post(create_user))
+        //
         .route("/api/login", post(login_handler))
         .route("/api/logout", get(logout_handler))
+        //
         .route("/health_check", get(health_check))
         //
         .layer(auth_layer)
         .layer(session_layer)
+        //
+        .fallback(fallback_handler)
         .with_state(shared_state);
-
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port);
-    debug!("listening on {}", addr);
-    let listener = TcpListener::bind(&addr).unwrap();
 
     axum::Server::from_tcp(listener)
         .unwrap()
