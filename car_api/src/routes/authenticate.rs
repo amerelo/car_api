@@ -46,7 +46,7 @@ pub async fn login_handler(
 
     match user {
         Some(user) => match auth.login(&user).await {
-            Ok(_) => Ok(format!("User logged in")),
+            Ok(_) => Ok("User logged in".to_string()),
             Err(_) => Err((StatusCode::UNAUTHORIZED, "Couldn't login user")),
         },
         None => Err((StatusCode::UNAUTHORIZED, "Couldn't login user")),

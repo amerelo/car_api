@@ -9,23 +9,18 @@ use axum::{
     routing::{get, post},
     Router,
 };
-
-use sqlx::PgPool;
-
-use tracing::error;
-
 use axum_login::{
     axum_sessions::{async_session::MemoryStore as SessionMemoryStore, SessionLayer},
     AuthLayer, RequireAuthorizationLayer,
 };
 use rand::Rng;
-
-// pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+use sqlx::PgPool;
+use tracing::error;
 
 pub async fn run(listener: TcpListener, pg_pool: PgPool) -> std::io::Result<()> {
     let secret = rand::thread_rng().gen::<[u8; 64]>();
     let session_store = SessionMemoryStore::new();
-    let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
+    let session_layer = SessionLayer::new(session_store, &secret);
 
     let user_store = axum_login::PostgresStore::<User>::new(pg_pool.clone())
         .with_query("SELECT * FROM users WHERE id::text = $1");
@@ -34,24 +29,14 @@ pub async fn run(listener: TcpListener, pg_pool: PgPool) -> std::io::Result<()> 
     let shared_state = Arc::new(AppState { pg_pool });
 
     let app = Router::new()
-        //
         .route("/api/account", get(get_account_details))
-        // .route(
-        //     "/api/user",
-        //     put(update_user).get(get_user_by_email).delete(delete_user),
-        // )
         .route_layer(RequireAuthorizationLayer::<User>::login())
-        //
         .route("/api/account", post(create_account))
-        //
         .route("/api/login", post(login_handler))
         .route("/api/logout", get(logout_handler))
-        //
         .route("/health_check", get(health_check))
-        //
         .layer(auth_layer)
         .layer(session_layer)
-        //
         .fallback(fallback_handler)
         .with_state(shared_state);
 

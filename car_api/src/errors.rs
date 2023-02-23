@@ -39,8 +39,6 @@ impl IntoResponse for Error {
             _ => None,
         };
 
-        // println!("API error: {:?}", self);
-
         (
             self.status_code(),
             Json(ErrorResponse {

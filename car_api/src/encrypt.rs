@@ -32,7 +32,7 @@ fn get_key(salt: &[u8], key: &mut [u8]) -> Result<(), Error> {
 
     pbkdf2_hmac(
         pass.as_bytes(),
-        &salt,
+        salt,
         10000,
         openssl::hash::MessageDigest::sha512(),
         key,
@@ -71,7 +71,7 @@ fn encrypt(text: &[u8]) -> Result<String, Error> {
 
 pub fn encrypt_data(data: String) -> Result<String, Error> {
     match env::var("ENCRYPTION_SECRET") {
-        Ok(..) => encrypt(&data.as_bytes()),
+        Ok(..) => encrypt(data.as_bytes()),
         _ => Ok(data),
     }
 }
@@ -92,9 +92,9 @@ fn decrypt(text: String) -> Result<String, Error> {
     let encrypted: &[u8] = &ciphertext[encrypted_position..];
 
     let mut key = [0; 32];
-    get_key(&salt, &mut key)?;
+    get_key(salt, &mut key)?;
 
-    let value = decrypt_aead(cipher, &key, Some(&iv), &[], &encrypted, &tag)?;
+    let value = decrypt_aead(cipher, &key, Some(iv), &[], encrypted, tag)?;
 
     Ok(String::from_utf8_lossy(&value).to_string())
 }

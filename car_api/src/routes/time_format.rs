@@ -19,5 +19,3 @@ mod my_date_format {
             .naive_utc())
     }
 }
-
-// .to_rfc3339_opts(SecondsFormat::Millis, true),
