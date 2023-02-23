@@ -12,6 +12,7 @@ type AuthContext = axum_login::extractors::AuthContext<User, axum_login::Postgre
 #[derive(Serialize, Deserialize, Debug, Clone, sqlx::FromRow)]
 pub struct User {
     pub id: Uuid,
+    pub user_name: String,
     pub email: String,
     pub password_hash: String,
 }

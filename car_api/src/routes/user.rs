@@ -13,6 +13,7 @@ use sqlx::types::{time::OffsetDateTime, uuid::Uuid};
 use time::format_description::well_known::Rfc3339;
 
 use sqlx::PgPool;
+use tracing::debug;
 
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 
@@ -28,46 +29,48 @@ pub struct UserInfo {
     pub password_hash: String,
     #[serde_as(as = "Rfc3339")]
     pub created_at: OffsetDateTime,
-    // #[serde_as(as = "Rfc3339")]
-    // pub updated_at: OffsetDateTime,
+    #[serde_as(as = "Rfc3339")]
+    pub updated_at: OffsetDateTime,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
-pub struct CreateUser {
+pub struct NewUser {
     pub user_name: String,
     pub email: String,
     pub password: String,
 }
 
-#[derive(Serialize, Debug, sqlx::FromRow)]
-pub struct UserId {
-    pub id: Uuid,
-}
-
-pub async fn create_user_db(pg_pool: &PgPool, user: &CreateUser) -> Result<Uuid> {
-    let user = sqlx::query_as::<_, UserInfo>(
+pub async fn insert_user_in_table(pg_pool: &PgPool, user: &NewUser) -> Result<Uuid> {
+    let user = sqlx::query!(
         r#"
-        INSERT INTO users(user_name, email, password_hash) 
+        INSERT INTO users(user_name, email, password_hash)
         VALUES ($1, $2, $3)
         RETURNING id
     "#,
+        &user.user_name,
+        &user.email,
+        &user.password
     )
-    .bind(&user.user_name)
-    .bind(&user.email)
-    .bind(&user.password)
     .fetch_one(pg_pool)
-    .await?;
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::Database(db_err) if db_err.constraint().is_some() => {
+            debug!("{}", db_err.message());
+            Error::Conflict("user already exist".into())
+        }
+        err => err.into(),
+    })?;
 
     Ok(user.id)
 }
 
 pub async fn create_user(
     State(state): State<Arc<AppState>>,
-    Json(user): Json<CreateUser>,
+    Json(user): Json<NewUser>,
 ) -> Result<StatusCode> {
     // encrypt password
 
-    let _ = create_user_db(&state.pg_pool, &user);
+    let _ = insert_user_in_table(&state.pg_pool, &user);
 
     Ok(StatusCode::CREATED)
 }

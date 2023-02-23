@@ -1,4 +1,5 @@
 use crate::database::get_pg_pool;
+use crate::routes::account::create_account;
 use crate::routes::{authenticate::*, health_check::*, user::*, AppState};
 
 use std::env;
@@ -51,10 +52,11 @@ pub async fn run() -> std::io::Result<()> {
             put(update_user).get(get_user_by_email).delete(delete_user),
         )
         .route_layer(RequireAuthorizationLayer::<User>::login())
-        .route("/health_check", get(health_check))
+        .route("/api/account", post(create_account))
+        // .route("/api/user", post(create_user))
         .route("/api/login", post(login_handler))
         .route("/api/logout", get(logout_handler))
-        .route("/api/user", post(create_user))
+        .route("/health_check", get(health_check))
         //
         .layer(auth_layer)
         .layer(session_layer)
@@ -80,7 +82,6 @@ async fn signal_shutdown() {
     tokio::signal::ctrl_c()
         .await
         .expect("expect tokio signal ctrl-c");
-    println!("signal shutdown");
 }
 
 #[tracing::instrument]
