@@ -3,9 +3,12 @@ use super::{
     user::{insert_user_in_table, NewUser},
     AppState,
 };
-use crate::errors::Error;
+use crate::{
+    encrypt::{decrypt_data, encrypt_data},
+    errors::Error,
+};
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{extract::State, http::StatusCode, Extension, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::types::uuid::Uuid;
 use sqlx::PgPool;
@@ -36,9 +39,10 @@ pub struct CreateAccount {
 
 pub async fn create_account(
     State(state): State<Arc<AppState>>,
-    Json(new_account): Json<CreateAccount>,
+    Json(mut new_account): Json<CreateAccount>,
 ) -> Result<StatusCode> {
-    // encrypt password
+    new_account.user.password = encrypt_data(new_account.user.password)?;
+    new_account.bank_details.iban = encrypt_data(new_account.bank_details.iban)?;
 
     let user_id = insert_user_in_table(&state.pg_pool, &new_account.user).await?;
 
@@ -99,11 +103,13 @@ pub struct AccountDetails {
 pub async fn get_account_details(
     Extension(user): Extension<User>,
     State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
+) -> Result<Json<AccountDetails>> {
     let cars = get_account_cars_info(&user, &state.pg_pool);
     let bank_details = get_account_bank_details(&user, &state.pg_pool);
 
-    let (cars_info, bank_details) = tokio::try_join!(cars, bank_details).unwrap();
+    let (cars_info, mut bank_details) = tokio::try_join!(cars, bank_details).unwrap();
+
+    bank_details.iban = decrypt_data(bank_details.iban)?;
 
     let account_details = AccountDetails {
         user,
@@ -111,7 +117,7 @@ pub async fn get_account_details(
         bank_details,
     };
 
-    Json(account_details)
+    Ok(Json(account_details))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, sqlx::FromRow)]

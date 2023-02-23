@@ -10,8 +10,6 @@ path = "src/lib.rs"
 path = "src/main.rs"
 name = "car_api"
 
-
-
 [dependencies]
 # back
 axum = { version = "0.6" }

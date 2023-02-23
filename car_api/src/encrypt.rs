@@ -13,12 +13,6 @@
  *  It is indeed possible to perform a bruteforce dictionary attack once the salt is known,
  *  but the KDF is designed to be slow enough to make this infeasible without precomputation.
  *
- *
- * Encryption and decryption utils for securely storing sensitive data.
- *
- * Encrypt: Data is JSON-stringified before encryption, and is returned as an encrypted string.
- * Decrypt: Data is decrypted from an encrypted string and is returned as a JSON Value.
- *
  * The encryption algorithm used is AES-256-GCM.
  */
 use openssl::{
@@ -75,10 +69,10 @@ fn encrypt(text: &[u8]) -> Result<String, Error> {
     ))
 }
 
-pub fn encrypt_data(value: &serde_json::Value) -> Result<String, Error> {
+pub fn encrypt_data(data: String) -> Result<String, Error> {
     match env::var("ENCRYPTION_SECRET") {
-        Ok(..) => encrypt(&value.to_string().as_bytes()),
-        _ => Ok(value.to_string()),
+        Ok(..) => encrypt(&data.as_bytes()),
+        _ => Ok(data),
     }
 }
 

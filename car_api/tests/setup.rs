@@ -1,4 +1,4 @@
-use sqlx::postgres::{PgConnectOptions, PgSslMode};
+use sqlx::postgres::PgConnectOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -9,13 +9,6 @@ pub struct TestApp {
     pub database_name: String,
     pub address: String,
     pub pg_pool: PgPool,
-}
-
-pub async fn drop_db(app: TestApp) {
-    app.pg_pool
-        .execute(&*format!(r#"DROP DATABASE "{}";"#, app.database_name))
-        .await
-        .expect("Failed to create database.");
 }
 
 pub async fn spawn_app() -> TestApp {
