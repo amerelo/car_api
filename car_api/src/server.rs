@@ -1,6 +1,5 @@
 use crate::database::get_pg_pool;
-use crate::routes::account::create_account;
-use crate::routes::{authenticate::*, health_check::*, user::*, AppState};
+use crate::routes::{account::*, authenticate::*, health_check::*, user::*, AppState};
 
 use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
@@ -45,8 +44,8 @@ pub async fn run() -> std::io::Result<()> {
     let app = Router::new()
         // example
         .route("/protected", get(protected_handler))
-        // get details
-        .route("/api/get_details", get(protected_handler))
+        //
+        .route("/api/account", get(get_account_details))
         .route(
             "/api/user",
             put(update_user).get(get_user_by_email).delete(delete_user),

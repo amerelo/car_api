@@ -9,28 +9,21 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use sqlx::types::{time::OffsetDateTime, uuid::Uuid};
-use time::format_description::well_known::Rfc3339;
-
+use sqlx::types::uuid::Uuid;
 use sqlx::PgPool;
 use tracing::debug;
 
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 
-// use validator::Validate;
-
 use std::sync::Arc;
 
-#[serde_with::serde_as]
 #[derive(Serialize, Debug, sqlx::FromRow)]
 pub struct UserInfo {
     pub id: Uuid,
     pub email: String,
     pub password_hash: String,
-    #[serde_as(as = "Rfc3339")]
-    pub created_at: OffsetDateTime,
-    #[serde_as(as = "Rfc3339")]
-    pub updated_at: OffsetDateTime,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
