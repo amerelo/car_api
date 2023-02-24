@@ -17,11 +17,6 @@ async fn main() -> std::io::Result<()> {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    // sqlx::migrate!("./migrations")
-    //     .run(&connection_pool)
-    //     .await
-    //     .expect("Failed to migrate the database");
-
     let port = match env::var("PORT") {
         Ok(p) => p.parse::<u16>().unwrap(),
         _ => 8080,

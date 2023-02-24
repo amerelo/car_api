@@ -28,17 +28,22 @@ pub struct NewUser {
     pub password: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Default, Clone, sqlx::FromRow)]
+pub struct ReturnID {
+    id: Uuid,
+}
+
 pub async fn insert_user_in_table(pg_pool: &PgPool, user: &NewUser) -> Result<Uuid> {
-    let user = sqlx::query!(
+    let user = sqlx::query_as::<_, ReturnID>(
         r#"
         INSERT INTO users(user_name, email, password_hash)
         VALUES ($1, $2, $3)
         RETURNING id
     "#,
-        &user.user_name,
-        &user.email,
-        &user.password
     )
+    .bind(&user.user_name)
+    .bind(&user.email)
+    .bind(&user.password)
     .fetch_one(pg_pool)
     .await
     .map_err(|err| match err {

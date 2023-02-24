@@ -36,10 +36,6 @@ services:
       dockerfile: Dockerfile_back
     volumes:
       - ./:/root/car_api
-      # - /car_api:/root/car_api:cached
-      # image: "rust:1.67"
-      # environment:
-      #   - USER=alexis
 
 volumes:
   db:

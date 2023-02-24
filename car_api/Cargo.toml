@@ -21,7 +21,7 @@ chrono = "0.4"
 axum-login = { git = "https://github.com/maxcountryman/axum-login", rev = "4efb8aa", features = ["postgres"] }
 rand = { version = "0.8", features = ["min_const_gen"] }
 #DB
-sqlx = { version = "0.6",  features = [ "runtime-tokio-rustls" , "macros", "postgres", "chrono", "uuid", "migrate"] }
+sqlx = { version = "0.6", default_features = false, features = [ "runtime-tokio-rustls" , "macros", "postgres", "chrono", "uuid", "migrate", "offline"] }
 # Important secondary crates
 uuid = { version = "1.3", features = ["serde", "v4"] }
 openssl = { version = "0.10" }
