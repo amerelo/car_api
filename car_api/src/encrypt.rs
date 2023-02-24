@@ -72,7 +72,9 @@ fn encrypt(text: &[u8]) -> Result<String, Error> {
 pub fn encrypt_data(data: String) -> Result<String, Error> {
     match env::var("ENCRYPTION_SECRET") {
         Ok(..) => encrypt(data.as_bytes()),
-        _ => Ok(data),
+        _ => Err(Error::Conflict(
+            "failed to find ENCRYPTION_SECRET in env".to_owned(),
+        )),
     }
 }
 

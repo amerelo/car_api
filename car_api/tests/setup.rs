@@ -19,8 +19,6 @@ pub async fn spawn_app() -> TestApp {
     let port = listener.local_addr().unwrap().port();
     let address = format!("http://127.0.0.1:{}", port);
 
-    // let mut configuration = get_configuration().expect("Failed to read configuration.");
-
     let database_name = Uuid::new_v4().to_string();
     let connection_pool = configure_database(database_name.clone()).await;
 
@@ -58,25 +56,19 @@ pub async fn configure_database(database_name: String) -> PgPool {
 }
 
 pub fn without_db() -> PgConnectOptions {
-    // let ssl_mode = PgSslMode::Require;
-
     PgConnectOptions::new()
         .host("host.docker.internal")
         .username(&std::env::var("POSTGRES_USER").unwrap())
         .password(&std::env::var("POSTGRES_PASSWORD").unwrap())
         .database("postgres")
         .port(5432)
-    // .ssl_mode(ssl_mode)
 }
 
 pub fn with_db(database_name: &str) -> PgConnectOptions {
-    // let ssl_mode = PgSslMode::Require;
-
     PgConnectOptions::new()
         .host("host.docker.internal")
         .username(&std::env::var("POSTGRES_USER").unwrap())
         .password(&std::env::var("POSTGRES_PASSWORD").unwrap())
         .database(database_name)
         .port(5432)
-    // .ssl_mode(ssl_mode)
 }

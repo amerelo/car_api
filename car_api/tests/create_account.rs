@@ -11,7 +11,7 @@ async fn create_returns_201_for_valid_form_data() {
         {
             "user": {
                 "email": "toto@email.com",
-              "password": "my super pasword",
+              "password": "my super password",
                 "user_name": "toto"
             },
             "car_info": {
@@ -50,7 +50,7 @@ async fn create_returns_422_for_missing_data() {
         {
             "user": {
                 "email": "toto@email.com",
-              "password": "my super pasword",
+              "password": "my super password",
                 "user_name": "toto"
             },
             "bank_details": {

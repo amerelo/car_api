@@ -1,5 +1,4 @@
-use sqlx::postgres::PgConnectOptions;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::PgPool;
 
 /// Returns a postgres pool from the user env.

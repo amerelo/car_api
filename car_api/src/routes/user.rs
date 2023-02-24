@@ -1,5 +1,7 @@
+use super::AppState;
 use crate::errors::Error;
 
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
 use sqlx::types::uuid::Uuid;
@@ -7,6 +9,8 @@ use sqlx::PgPool;
 use tracing::debug;
 
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
+
+use std::sync::Arc;
 
 #[derive(Serialize, Debug, sqlx::FromRow)]
 pub struct UserInfo {
@@ -46,4 +50,45 @@ pub async fn insert_user_in_table(pg_pool: &PgPool, user: &NewUser) -> Result<Uu
     })?;
 
     Ok(user.id)
+}
+
+#[derive(Deserialize)]
+pub struct UpdateUser {
+    pub id: Uuid,
+    pub password_hash: Option<String>,
+    pub email: Option<String>,
+}
+
+#[allow(dead_code)]
+pub async fn update_user(
+    State(state): State<Arc<AppState>>,
+    Json(user): Json<UpdateUser>,
+) -> impl IntoResponse {
+    let response = sqlx::query(
+        r#"
+        UPDATE users
+        SET (password_hash, email) =
+            (
+                COALESCE($1, users.password_hash),
+                COALESCE($2, users.email)
+            )
+        WHERE id=$3
+        "#,
+    )
+    .bind(&user.password_hash)
+    .bind(&user.email)
+    .bind(&user.id)
+    .execute(&state.pg_pool)
+    .await;
+
+    match response {
+        Ok(val) => Ok((
+            StatusCode::OK,
+            format!("user updated with success {:?}", val),
+        )),
+        Err(err) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("An error happened {:?}", err),
+        )),
+    }
 }

@@ -46,6 +46,8 @@ pub async fn create_account(
 
     let user_id = insert_user_in_table(&state.pg_pool, &new_account.user).await?;
 
+    // println!("create new_account {:?}", new_account);
+
     let bank_details =
         insert_bank_details_in_table(&state.pg_pool, &user_id, &new_account.bank_details);
 
