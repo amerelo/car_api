@@ -1,0 +1,34 @@
+curl --request GET \
+  --url http://localhost:8080/health_check
+
+curl --request POST \
+  --url http://localhost:8080/api/account \
+  --header 'Content-Type: application/json' \
+  --data '{
+	"user": {
+		"email": "toto@email.com",
+  	"password": "my super password",
+		"user_name": "toto"
+	},
+	"car_info": {
+		"car_model": "tesla",
+		"car_plate": "42"
+	},
+	"bank_details": {
+		"account_holder": "toto",
+		"bank_country": "france",
+		"iban": "12345"
+	}
+}'
+
+curl --request POST \
+  --url http://localhost:8080/login \
+  --header 'Content-Type: application/json' \
+  --data '{
+	"email": "toto@email.com",
+  "password_hash": "my super password"
+}'
+
+curl --request GET \
+  --url http://localhost:8080/api/account \
+  --header 'Content-Type: application/json'

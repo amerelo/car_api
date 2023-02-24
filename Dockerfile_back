@@ -1,6 +1,5 @@
 FROM rust:1.67 as builder
 
-# /usr/src/car_api | /root/car_api
 WORKDIR /root/car_api
 
 COPY ./car_api .

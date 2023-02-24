@@ -8,6 +8,7 @@ mod routes;
 use database::get_pg_pool;
 use startup::run;
 
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::{env, net::TcpListener};
 use tracing::debug;
 
@@ -21,7 +22,9 @@ async fn main() -> std::io::Result<()> {
         Ok(p) => p.parse::<u16>().unwrap(),
         _ => 8080,
     };
-    let address = format!("127.0.0.1:{}", port);
+
+    // create SocketAddr this way in order to be available form docker
+    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port);
     debug!("listening on {}", address);
     let listener = TcpListener::bind(&address).unwrap();
 
